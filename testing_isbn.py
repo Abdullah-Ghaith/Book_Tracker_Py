@@ -13,6 +13,7 @@ def get_book_details(isbn):
             author = ", ".join(book_data.get('authors', []))
             tags = book_data.get('categories', [])
             rating = book_data.get('averageRating', 0)
+            description = book_data.get('description', '')
             #TODO You can retrieve more details like publication date, description, etc.
 
             return {
@@ -20,6 +21,7 @@ def get_book_details(isbn):
                 'author': author,
                 'tags': tags,
                 'rating': rating,
+                'description': description,
             }
         else:
             return None
