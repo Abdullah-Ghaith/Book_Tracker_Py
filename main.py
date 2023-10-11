@@ -4,12 +4,7 @@ import requests
 from tkinter import messagebox, Listbox, END, simpledialog
 from datetime import datetime
 
-#TODO add a edit button
-#TODO add a save button
-#TODO add a load button
-#TODO add the ability to open a book in a new window, showing all details
-
-#CONSTANTS:
+# CONSTANTS:
 NULL_DESCRIPTION = "No description available."
 
 class Book:
@@ -27,11 +22,12 @@ class BookTracker:
 
     def add_book(self, book):
         self.books.append(book)
-    
+
     def search_books(self, criteria):
         results = []
         for book in self.books:
-            if (criteria in book.title) or (criteria in book.author) or (criteria in book.tags) or (criteria.isdigit() and int(criteria) == book.rating):
+            if (criteria in book.title) or (criteria in book.author) or (criteria in book.tags) or (
+                    criteria.isdigit() and int(criteria) == book.rating):
                 results.append(book)
         return results
 
@@ -54,6 +50,8 @@ class BookTrackerGUI:
 
         self.root = root
         self.root.title("Book Tracker")
+
+        self.mode = "list"  # Default mode is list view
 
         self.title_label = tk.Label(root, text="Title:")
         self.title_label.pack()
@@ -88,8 +86,8 @@ class BookTrackerGUI:
         self.add_button = tk.Button(root, text="Add Book", command=self.add_book)
         self.add_button.pack()
 
-        self.add_button = tk.Button(root, text="Scan Book", command=self.prompt_isbn_plus_date)
-        self.add_button.pack()
+        self.scan_button = tk.Button(root, text="Scan Book", command=self.prompt_isbn_plus_date)
+        self.scan_button.pack()
 
         self.search_label = tk.Label(root, text="Search:")
         self.search_label.pack()
@@ -99,6 +97,14 @@ class BookTrackerGUI:
         self.search_button = tk.Button(root, text="Search Books", command=self.search_books)
         self.search_button.pack()
 
+        # "List View" and "Single View" buttons under "Scan Book"
+        self.mode_label = tk.Label(root, text="View Mode:")
+        self.mode_label.pack()
+        self.mode_list_button = tk.Button(root, text="List View", command=self.switch_to_list_view)
+        self.mode_list_button.pack()
+        self.mode_single_button = tk.Button(root, text="Single View", command=self.switch_to_single_view)
+        self.mode_single_button.pack()
+        
         self.show_all_button = tk.Button(root, text="Show All Books", command=self.show_all_books)
         self.show_all_button.pack()
 
@@ -120,7 +126,25 @@ class BookTrackerGUI:
 
         self.show_all_books()
 
-    def add_book(self): #TODO rename this to manual_add_book
+        # Add widgets for single view mode
+        self.single_view_frame = tk.Frame(root)
+
+        self.prev_button = tk.Button(self.single_view_frame, text="< Prev", command=self.show_prev_book)
+        self.prev_button.pack(side=tk.LEFT)
+
+        self.next_button = tk.Button(self.single_view_frame, text="Next >", command=self.show_next_book)
+        self.next_button.pack(side=tk.RIGHT)
+
+        self.book_label = tk.Label(self.single_view_frame, text="")
+        self.book_label.pack()
+
+        self.current_book_index = 0
+        self.show_current_book()
+
+        # Hide the single view frame initially
+        self.single_view_frame.pack_forget()
+
+    def add_book(self):
         title = self.title_entry.get()
         author = self.author_entry.get()
         tags = [tag.strip() for tag in self.tags_entry.get().split(",")]
@@ -133,6 +157,7 @@ class BookTrackerGUI:
 
         messagebox.showinfo("Success", "Book added successfully!")
         self.tracker.save_to_json("books.json")
+        self.show_all_books()
 
     def _scan_add_book(self, isbn, date_read):
         url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
@@ -145,23 +170,24 @@ class BookTrackerGUI:
                 title = book_data.get('title', '')
                 author = ", ".join(book_data.get('authors', []))
                 tags = book_data.get('categories', [])
-                rating = book_data.get('averageRating', 0) #TODO: make this something sydnie edits on her own
+                rating = book_data.get('averageRating', 0)
                 description = book_data.get('description', '')
-                
+
                 # Convert the date to a string representation
-                date_read_str = date_read.isoformat()  # Format as 'YYYY-MM-DD'
+                date_read_str = date_read.isoformat()
                 new_book = Book(title, author, tags, rating, date_read_str, description)
                 self.tracker.add_book(new_book)
                 self.tracker.save_to_json("books.json")
+                self.show_all_books()
 
         else:
             print("Error getting book details")
             return None
 
     def prompt_isbn_plus_date(self):
-        user_isbn = tk.simpledialog.askstring("Input", "Enter an ISBN:")
+        user_isbn = simpledialog.askstring("Input", "Enter an ISBN:")
         if user_isbn is not None:
-            user_date_read = tk.simpledialog.askstring("Input", "When did you finish reading this? (YYYY-MM-DD):")
+            user_date_read = simpledialog.askstring("Input", "When did you finish reading this? (YYYY-MM-DD):")
             if user_date_read.strip() != "":
                 self._scan_add_book(isbn=user_isbn, date_read=datetime.strptime(user_date_read, "%Y-%m-%d").date())
             else:
@@ -170,7 +196,8 @@ class BookTrackerGUI:
     def show_all_books(self):
         self.results_listbox.delete(0, END)
         for book in self.tracker.books:
-            self.results_listbox.insert(tk.END, f"{book.title} by {book.author}, rating: {book.rating}, read date: {book.read_date}, tags: {book.tags}")
+            self.results_listbox.insert(tk.END,
+                                        f"{book.title} by {book.author}, rating: {book.rating}, read date: {book.read_date}, tags: {book.tags}")
 
     def search_books(self):
         self.results_listbox.delete(0, END)
@@ -179,7 +206,8 @@ class BookTrackerGUI:
         if criteria:
             search_results = self.tracker.search_books(criteria)
             for book in search_results:
-                self.results_listbox.insert(tk.END, f"{book.title} by {book.author}, rating: {book.rating}, read date: {book.read_date}, tags: {book.tags}")
+                self.results_listbox.insert(tk.END,
+                                            f"{book.title} by {book.author}, rating: {book.rating}, read date: {book.read_date}, tags: {book.tags}")
         else:
             self.show_all_books()
 
@@ -195,7 +223,43 @@ class BookTrackerGUI:
                     self.show_all_books()
                     break
         else:
-            messagebox.showerror("Error", "No book selected!") 
+            messagebox.showerror("Error", "No book selected!")
+
+    def switch_to_list_view(self):
+        self.mode = "list"
+        self.mode_list_button.config(state=tk.DISABLED)
+        self.mode_single_button.config(state=tk.NORMAL)
+        self.results_listbox.pack()
+        self.single_view_frame.pack_forget()
+
+    def switch_to_single_view(self):
+        self.mode = "single"
+        self.mode_single_button.config(state=tk.DISABLED)
+        self.mode_list_button.config(state=tk.NORMAL)
+        self.results_listbox.pack_forget()
+        self.single_view_frame.pack()
+
+        # Show the current book in single view
+        self.show_current_book()
+
+    def show_current_book(self):
+        if len(self.tracker.books) > 0:
+            book = self.tracker.books[self.current_book_index]
+            self.book_label.config(
+                text=f"{book.title} by {book.author}, rating: {book.rating}, read date: {book.read_date}, tags: {book.tags}, description: {book.description}")
+        else:
+            self.book_label.config(text="No books found")
+
+    def show_prev_book(self):
+        if self.current_book_index > 0:
+            self.current_book_index -= 1
+            self.show_current_book()
+
+    def show_next_book(self):
+        if self.current_book_index < len(self.tracker.books) - 1:
+            self.current_book_index += 1
+            self.show_current_book()
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = BookTrackerGUI(root)
