@@ -1,12 +1,17 @@
 import tkinter as tk
 import json
-from tkinter import messagebox, Listbox, END
+import requests
+from tkinter import messagebox, Listbox, END, simpledialog
+from datetime import datetime
 
 #TODO add a delete button
 #TODO add a edit button
 #TODO add a save button
 #TODO add a load button
 #TODO add the ability to open a book in a new window, showing all details
+
+#CONSTANTS:
+NULL_DESCRIPTION = "No description available."
 
 class Book:
     def __init__(self, title, author, tags, rating, read_date, description=""):
@@ -23,7 +28,7 @@ class BookTracker:
 
     def add_book(self, book):
         self.books.append(book)
-
+    
     def search_books(self, criteria):
         results = []
         for book in self.books:
@@ -84,6 +89,9 @@ class BookTrackerGUI:
         self.add_button = tk.Button(root, text="Add Book", command=self.add_book)
         self.add_button.pack()
 
+        self.add_button = tk.Button(root, text="Scan Book", command=self.prompt_isbn_plus_date)
+        self.add_button.pack()
+
         self.search_label = tk.Label(root, text="Search:")
         self.search_label.pack()
         self.search_entry = tk.Entry(root)
@@ -123,6 +131,34 @@ class BookTrackerGUI:
 
         messagebox.showinfo("Success", "Book added successfully!")
         self.tracker.save_to_json("books.json")
+
+    def _scan_add_book(self, isbn, date_read):
+        url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            data = response.json()
+            if 'items' in data:
+                book_data = data['items'][0]['volumeInfo']
+                title = book_data.get('title', '')
+                author = ", ".join(book_data.get('authors', []))
+                tags = book_data.get('categories', [])
+                rating = book_data.get('averageRating', 0) #TODO: make this something sydnie edits on her own
+                #TODO You can retrieve more details like publication date, description, etc.
+                new_book = Book(title, author, tags, rating, date_read, NULL_DESCRIPTION)
+                self.tracker.add_book(new_book)
+        else:
+            print("Error getting book details")
+            return None
+
+    def prompt_isbn_plus_date(self):
+        user_isbn = tk.simpledialog.askstring("Input", "Enter an ISBN:")
+        if user_isbn is not None:
+            user_date_read = tk.simpledialog.askstring("Input", "When did you finish reading this? (YYYY-MM-DD):")
+            if user_date_read.strip() != "":
+                self._scan_add_book(isbn=user_isbn, date_read=datetime.strptime(user_date_read, "%Y-%m-%d").date())
+            else:
+                self._scan_add_book(isbn=user_isbn, date_read=datetime.today().date())
 
     def show_all_books(self):
         self.results_listbox.delete(0, END)
