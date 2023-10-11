@@ -4,7 +4,6 @@ import requests
 from tkinter import messagebox, Listbox, END, simpledialog
 from datetime import datetime
 
-#TODO add a delete button
 #TODO add a edit button
 #TODO add a save button
 #TODO add a load button
@@ -103,6 +102,9 @@ class BookTrackerGUI:
         self.show_all_button = tk.Button(root, text="Show All Books", command=self.show_all_books)
         self.show_all_button.pack()
 
+        self.remove_button = tk.Button(root, text="Remove Book", command=self.remove_book)
+        self.remove_button.pack()
+
         self.results_label = tk.Label(root, text="Search Results:")
         self.results_label.pack()
         self.results_listbox = Listbox(root, height=30, width=100)
@@ -176,6 +178,19 @@ class BookTrackerGUI:
         else:
             self.show_all_books()
 
+    def remove_book(self):
+        selected_book = self.results_listbox.get(self.results_listbox.curselection())
+        if selected_book:
+            book_title = selected_book.split(" by ")[0]
+            for book in self.tracker.books:
+                if book.title == book_title:
+                    self.tracker.books.remove(book)
+                    messagebox.showinfo("Success", "Book removed successfully!")
+                    self.tracker.save_to_json("books.json")
+                    self.show_all_books()
+                    break
+        else:
+            messagebox.showerror("Error", "No book selected!") 
 if __name__ == "__main__":
     root = tk.Tk()
     app = BookTrackerGUI(root)
