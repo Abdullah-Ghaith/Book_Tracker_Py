@@ -120,7 +120,7 @@ class BookTrackerGUI:
 
         self.show_all_books()
 
-    def add_book(self):
+    def add_book(self): #TODO rename this to manual_add_book
         title = self.title_entry.get()
         author = self.author_entry.get()
         tags = [tag.strip() for tag in self.tags_entry.get().split(",")]
@@ -146,9 +146,14 @@ class BookTrackerGUI:
                 author = ", ".join(book_data.get('authors', []))
                 tags = book_data.get('categories', [])
                 rating = book_data.get('averageRating', 0) #TODO: make this something sydnie edits on her own
+                
+                # Convert the date to a string representation
+                date_read_str = date_read.isoformat()  # Format as 'YYYY-MM-DD'
                 #TODO You can retrieve more details like publication date, description, etc.
-                new_book = Book(title, author, tags, rating, date_read, NULL_DESCRIPTION)
+                new_book = Book(title, author, tags, rating, date_read_str, NULL_DESCRIPTION)
                 self.tracker.add_book(new_book)
+                self.tracker.save_to_json("books.json")
+
         else:
             print("Error getting book details")
             return None
