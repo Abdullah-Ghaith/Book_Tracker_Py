@@ -53,74 +53,96 @@ class BookTrackerGUI:
         
         self.root = root
         self.root.title("Book Tracker")
+        self.root.geometry("800x800")
+
+        # Create a canvas and a vertical scrollbar
+        self.canvas = tk.Canvas(root)
+        self.scrollbar = tk.Scrollbar(root, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas)
+
+         # Configure the canvas to work with the scrollbar
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
+            )
+        )
+
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        # Pack the canvas and the scrollbar
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
 
         self.mode = "list"  # Default mode is list view
 
-        self.title_label = tk.Label(root, text="Title:")
+        self.title_label = tk.Label(self.scrollable_frame, text="Title:")
         self.title_label.pack()
-        self.title_entry = tk.Entry(root)
+        self.title_entry = tk.Entry(self.scrollable_frame)
         self.title_entry.pack()
 
-        self.author_label = tk.Label(root, text="Author:")
+        self.author_label = tk.Label(self.scrollable_frame, text="Author:")
         self.author_label.pack()
-        self.author_entry = tk.Entry(root)
+        self.author_entry = tk.Entry(self.scrollable_frame)
         self.author_entry.pack()
 
-        self.tags_label = tk.Label(root, text="Tags (comma-separated):")
+        self.tags_label = tk.Label(self.scrollable_frame, text="Tags (comma-separated):")
         self.tags_label.pack()
-        self.tags_entry = tk.Entry(root)
+        self.tags_entry = tk.Entry(self.scrollable_frame)
         self.tags_entry.pack()
 
-        self.rating_label = tk.Label(root, text="Rating (1-5):")
+        self.rating_label = tk.Label(self.scrollable_frame, text="Rating (1-5):")
         self.rating_label.pack()
-        self.rating_entry = tk.Entry(root)
+        self.rating_entry = tk.Entry(self.scrollable_frame)
         self.rating_entry.pack()
 
-        self.date_label = tk.Label(root, text="Read Date (YYYY-MM-DD):")
+        self.date_label = tk.Label(self.scrollable_frame, text="Read Date (YYYY-MM-DD):")
         self.date_label.pack()
-        self.date_entry = tk.Entry(root)
+        self.date_entry = tk.Entry(self.scrollable_frame)
         self.date_entry.pack()
 
-        self.description_label = tk.Label(root, text="Description:", wraplength=40)
+        self.description_label = tk.Label(self.scrollable_frame, text="Description:", wraplength=40)
         self.description_label.pack()
-        self.description_entry = tk.Text(root, width=50, height=10, wrap="word")
+        self.description_entry = tk.Text(self.scrollable_frame, width=50, height=10, wrap="word")
         self.description_entry.pack()
 
-        self.add_button = tk.Button(root, text="Add Book", command=self.add_book)
+        self.add_button = tk.Button(self.scrollable_frame, text="Add Book", command=self.add_book)
         self.add_button.pack()
 
-        self.scan_button = tk.Button(root, text="Scan Book", command=self.prompt_isbn_plus_date)
+        self.scan_button = tk.Button(self.scrollable_frame, text="Scan Book", command=self.prompt_isbn_plus_date)
         self.scan_button.pack()
 
-        self.search_label = tk.Label(root, text="Search:")
+        self.search_label = tk.Label(self.scrollable_frame, text="Search:")
         self.search_label.pack()
-        self.search_entry = tk.Entry(root)
+        self.search_entry = tk.Entry(self.scrollable_frame)
         self.search_entry.pack()
 
-        self.search_button = tk.Button(root, text="Search Books", command=self.search_books)
+        self.search_button = tk.Button(self.scrollable_frame, text="Search Books", command=self.search_books)
         self.search_button.pack()
 
         # "List View" and "Single View" buttons under "Scan Book"
-        self.mode_label = tk.Label(root, text="View Mode:")
+        self.mode_label = tk.Label(self.scrollable_frame, text="View Mode:")
         self.mode_label.pack()
-        self.mode_list_button = tk.Button(root, text="List View", command=self.switch_to_list_view)
+        self.mode_list_button = tk.Button(self.scrollable_frame, text="List View", command=self.switch_to_list_view)
         self.mode_list_button.pack()
-        self.mode_single_button = tk.Button(root, text="Single View", command=self.switch_to_single_view)
+        self.mode_single_button = tk.Button(self.scrollable_frame, text="Single View", command=self.switch_to_single_view)
         self.mode_single_button.pack()
         
-        self.show_all_button = tk.Button(root, text="Show All Books", command=self.show_all_books)
+        self.show_all_button = tk.Button(self.scrollable_frame, text="Show All Books", command=self.show_all_books)
         self.show_all_button.pack()
 
-        self.remove_button = tk.Button(root, text="Remove Book", command=self.remove_book)
+        self.remove_button = tk.Button(self.scrollable_frame, text="Remove Book", command=self.remove_book)
         self.remove_button.pack()
 
-        self.results_label = tk.Label(root, text="Search Results:")
+        self.results_label = tk.Label(self.scrollable_frame, text="Search Results:")
         self.results_label.pack()
-        self.results_listbox = Listbox(root, height=30, width=100)
+        self.results_listbox = Listbox(self.scrollable_frame, height=30, width=100)
         self.results_listbox.pack()
 
         # Create a scrollbar for the listbox
-        scrollbar = tk.Scrollbar(root)
+        scrollbar = tk.Scrollbar(self.scrollable_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Configure the scrollbar to work with the listbox
@@ -130,7 +152,7 @@ class BookTrackerGUI:
         self.show_all_books()
 
         # Add widgets for single view mode
-        self.single_view_frame = tk.Frame(root)
+        self.single_view_frame = tk.Frame(self.scrollable_frame)
         self.image_label = tk.Label(self.single_view_frame)
         self.image_label.pack()
 
@@ -267,7 +289,7 @@ class BookTrackerGUI:
                     response = requests.get(book.image_link)
                     img_data = response.content
                     img = Image.open(BytesIO(img_data))
-                    img = img.resize((80, 80), Image.BICUBIC)  # Resize the image
+                    img = img.resize((160, 160), Image.BICUBIC)  # Resize the image
                     img = ImageTk.PhotoImage(img)
                     self.image_label.config(image=img)
                     self.image_label.image = img  # Keep a reference to the image
