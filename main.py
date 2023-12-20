@@ -140,8 +140,14 @@ class BookTrackerGUI:
         self.next_button = tk.Button(self.single_view_frame, text="Next >", command=self.show_next_book)
         self.next_button.pack(side=tk.RIGHT)
 
-        self.book_label = tk.Label(self.single_view_frame, text="")
+        # Use a Text widget for the book label
+        self.book_label = tk.Text(self.single_view_frame, wrap="word", width=50, height=10)
         self.book_label.pack()
+
+        # Add a scrollbar to the book label
+        self.book_label_scrollbar = tk.Scrollbar(self.single_view_frame, command=self.book_label.yview)
+        self.book_label_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.book_label.config(yscrollcommand=self.book_label_scrollbar.set)
 
         self.current_book_index = 0
         self.show_current_book()
@@ -242,28 +248,34 @@ class BookTrackerGUI:
         self.mode_single_button.config(state=tk.DISABLED)
         self.mode_list_button.config(state=tk.NORMAL)
         self.results_listbox.pack_forget()
-        self.single_view_frame.pack()
+        self.single_view_frame.pack(side=tk.TOP)
 
         # Show the current book in single view
         self.show_current_book()
 
     def show_current_book(self):
         if len(self.tracker.books) > 0:
-            book = self.tracker.books[self.current_book_index]
-            self.book_label.config(
-                text=f"{book.title} by {book.author}, rating: {book.rating}, read date: {book.read_date}, tags: {book.tags}, description: {book.description}")
+                book = self.tracker.books[self.current_book_index]
+                # Make sure the Text widget is in 'normal' state before updating the text
+                self.book_label.config(state='normal')
+                self.book_label.delete('1.0', 'end')
+                self.book_label.insert('1.0', f"{book.title} by {book.author}, rating: {book.rating}, read date: {book.read_date}, tags: {book.tags}, description: {book.description}")
+                self.book_label.config(state='disabled')  # Make the Text widget read-only
 
-            # Load and display the image
-            if book.image_link:  # Check if the image link is not empty
-                response = requests.get(book.image_link)
-                img_data = response.content
-                img = Image.open(BytesIO(img_data))
-                img = img.resize((100, 150), Image.BICUBIC)  # Resize the image
-                img = ImageTk.PhotoImage(img)
-                self.image_label.config(image=img)
-                self.image_label.image = img  # Keep a reference to the image
+                # Load and display the image
+                if book.image_link:  # Check if the image link is not empty
+                    response = requests.get(book.image_link)
+                    img_data = response.content
+                    img = Image.open(BytesIO(img_data))
+                    img = img.resize((80, 80), Image.BICUBIC)  # Resize the image
+                    img = ImageTk.PhotoImage(img)
+                    self.image_label.config(image=img)
+                    self.image_label.image = img  # Keep a reference to the image
         else:
-            self.book_label.config(text="No books found")
+            self.book_label.config(state='normal')
+            self.book_label.delete('1.0', 'end')
+            self.book_label.insert('1.0', "No books found")
+            self.book_label.config(state='disabled')
 
     def show_prev_book(self):
         if self.current_book_index > 0:
