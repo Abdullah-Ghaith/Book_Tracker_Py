@@ -3,18 +3,21 @@ import json
 import requests
 from tkinter import messagebox, Listbox, END, simpledialog
 from datetime import datetime
+from PIL import Image, ImageTk
+from io import BytesIO
 
 # CONSTANTS:
 NULL_DESCRIPTION = "No description available."
 
 class Book:
-    def __init__(self, title, author, tags, rating, read_date, description=""):
+    def __init__(self, title, author, tags, rating, read_date, description="", image_link=""):
         self.title = title
         self.author = author
         self.tags = tags
         self.rating = rating
         self.read_date = read_date
         self.description = description
+        self.image_link = image_link
 
 class BookTracker:
     def __init__(self):
@@ -47,7 +50,7 @@ class BookTrackerGUI:
     def __init__(self, root):
         self.tracker = BookTracker()
         self.tracker.load_from_json("books.json")  # Load data on startup
-
+        
         self.root = root
         self.root.title("Book Tracker")
 
@@ -78,9 +81,9 @@ class BookTrackerGUI:
         self.date_entry = tk.Entry(root)
         self.date_entry.pack()
 
-        self.description_label = tk.Label(root, text="Description:")
+        self.description_label = tk.Label(root, text="Description:", wraplength=40)
         self.description_label.pack()
-        self.description_entry = tk.Entry(root)
+        self.description_entry = tk.Text(root, width=50, height=10, wrap="word")
         self.description_entry.pack()
 
         self.add_button = tk.Button(root, text="Add Book", command=self.add_book)
@@ -128,6 +131,8 @@ class BookTrackerGUI:
 
         # Add widgets for single view mode
         self.single_view_frame = tk.Frame(root)
+        self.image_label = tk.Label(self.single_view_frame)
+        self.image_label.pack()
 
         self.prev_button = tk.Button(self.single_view_frame, text="< Prev", command=self.show_prev_book)
         self.prev_button.pack(side=tk.LEFT)
@@ -150,7 +155,7 @@ class BookTrackerGUI:
         tags = [tag.strip() for tag in self.tags_entry.get().split(",")]
         rating = int(self.rating_entry.get())
         read_date = self.date_entry.get()
-        description = self.description_entry.get()
+        description = self.description_entry.get('1.0', 'end')
 
         new_book = Book(title, author, tags, rating, read_date, description)
         self.tracker.add_book(new_book)
@@ -164,22 +169,22 @@ class BookTrackerGUI:
         response = requests.get(url)
 
         if response.status_code == 200:
-            data = response.json()
-            if 'items' in data:
-                book_data = data['items'][0]['volumeInfo']
-                title = book_data.get('title', '')
-                author = ", ".join(book_data.get('authors', []))
-                tags = book_data.get('categories', [])
-                rating = book_data.get('averageRating', 0)
-                description = book_data.get('description', '')
+                data = response.json()
+                if 'items' in data:
+                    book_data = data['items'][0]['volumeInfo']
+                    title = book_data.get('title', '')
+                    author = ", ".join(book_data.get('authors', []))
+                    tags = book_data.get('categories', [])
+                    rating = book_data.get('averageRating', 0)
+                    description = book_data.get('description', '')
+                    image_link = book_data.get('imageLinks', {}).get('thumbnail', '')
 
-                # Convert the date to a string representation
-                date_read_str = date_read.isoformat()
-                new_book = Book(title, author, tags, rating, date_read_str, description)
-                self.tracker.add_book(new_book)
-                self.tracker.save_to_json("books.json")
-                self.show_all_books()
-
+                    # Convert the date to a string representation
+                    date_read_str = date_read.isoformat()
+                    new_book = Book(title, author, tags, rating, date_read_str, description, image_link)
+                    self.tracker.add_book(new_book)
+                    self.tracker.save_to_json("books.json")
+                    self.show_all_books()
         else:
             print("Error getting book details")
             return None
@@ -247,6 +252,16 @@ class BookTrackerGUI:
             book = self.tracker.books[self.current_book_index]
             self.book_label.config(
                 text=f"{book.title} by {book.author}, rating: {book.rating}, read date: {book.read_date}, tags: {book.tags}, description: {book.description}")
+
+            # Load and display the image
+            if book.image_link:  # Check if the image link is not empty
+                response = requests.get(book.image_link)
+                img_data = response.content
+                img = Image.open(BytesIO(img_data))
+                img = img.resize((100, 150), Image.BICUBIC)  # Resize the image
+                img = ImageTk.PhotoImage(img)
+                self.image_label.config(image=img)
+                self.image_label.image = img  # Keep a reference to the image
         else:
             self.book_label.config(text="No books found")
 

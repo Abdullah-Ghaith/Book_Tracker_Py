@@ -1,4 +1,5 @@
 import requests
+from IPython.display import Image, display
 
 
 def get_book_details(isbn):
@@ -14,7 +15,10 @@ def get_book_details(isbn):
             tags = book_data.get('categories', [])
             rating = book_data.get('averageRating', 0)
             description = book_data.get('description', '')
-            #TODO You can retrieve more details like publication date, description, etc.
+            image_link = book_data.get('imageLinks', {}).get('thumbnail', '')
+
+            if image_link:
+                display(Image(url=image_link))
 
             return {
                 'title': title,
