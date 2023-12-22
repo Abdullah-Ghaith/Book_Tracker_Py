@@ -218,13 +218,13 @@ class BookTrackerGUI:
             return None
 
     def prompt_isbn_plus_date(self):
-        user_isbn = simpledialog.askstring("Input", "Enter an ISBN:")
+        user_isbn = simpledialog.askstring("Input", "Enter an ISBN:", parent=self.root)
         if user_isbn is not None:
-            user_date_read = simpledialog.askstring("Input", "When did you finish reading this? (YYYY-MM-DD):")
-            if user_date_read.strip() != "":
-                self._scan_add_book(isbn=user_isbn, date_read=datetime.strptime(user_date_read, "%Y-%m-%d").date())
+            user_date_read = simpledialog.askstring("Input", "When did you finish reading this? (YYYY-MM):", parent=self.root, initialvalue=datetime.today().date().strftime("%Y-%m"))
+            if user_date_read is not None:
+                self._scan_add_book(isbn=user_isbn, date_read=datetime.strptime(user_date_read, "%Y-%m").date())
             else:
-                self._scan_add_book(isbn=user_isbn, date_read=datetime.today().date())
+                messagebox.showerror("Error", "No date entered!")
 
     def show_all_books(self):
         self.results_listbox.delete(0, END)
